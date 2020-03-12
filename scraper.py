@@ -42,6 +42,8 @@ def parseDoctorUrl(url):
 		doctor_info.update(personal_data)
 		clinical_practise = parseClinicalPractise(main_table)
 		doctor_info.update(clinical_practise)
+		qualifications = parseQualifications(main_table)
+		doctor_info.update(qualifications)
 		return doctor_info
 	else:
 		return None
@@ -69,6 +71,11 @@ def parseClinicalPractise(main_table):
 				key = '(Clinic '+str(clinical_practise_no)+') '+cleanUp(data_list[1].text)
 			clinical_practise[key] = cleanUp(data_list[2].text)
 	return clinical_practise
+
+def parseQualifications(main_table):
+	qualifications_table = main_table.find('td', text='Qualifications').parent
+	qualifications = {}
+	return qualifications
 
 def cleanUp(text):
 	words = text.split(' ')
