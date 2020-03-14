@@ -20,9 +20,9 @@ QUAL_COLUMNS = 3
 # Qualification ROWS
 QUAL_ROW_HEADING = 0
 QUAL_ROW_BASIC_HEADING = 1
-QUAL_ROW_BASIC_INFO = 2
+QUAL_ROW_BASIC_DATA = 2
 QUAL_ROW_SPECIALIST_HEADING = 3
-QUAL_ROW_SPECIALIST_INFO = 4
+QUAL_ROW_SPECIALIST_DATA = 4
 
 progressbar_widgets=[
 	' [', progressbar.Timer(), '] ',
@@ -40,25 +40,27 @@ def loadUrlFile(url_file_name):
 	try:
 		with open(url_file_name) as url_file:
 			for url in url_file:
-				urls.append(url.strip())
+				url_stripped = url.strip()
+				if url_stripped != '':
+					urls.append(url.strip())
 	except FileNotFoundError:
 		print("The file " + url_file_name + " does not exist!")
 		sys.exit(-1)
 	print("done")
 	return urls
 
-def getDoctorInfo(urls):
+def getDoctorData(urls):
 	"""
-	Gets the doctor information from a list of URLs
+	Gets doctor data from a list of URLs
 	"""
-	print("\nParsing doctor information from the URLs")
-	doctor_info_list = []
+	print("\nParsing doctor data from the URLs")
+	doctor_data_list = []
 	for url in progressbar.progressbar(urls, widgets=progressbar_widgets):
 		sleep(HTTP_REQUEST_WAIT)
-		doctor_info = parseDoctorUrl(url)
-		if doctor_info is not None:
-			doctor_info_list.append(doctor_info)
-	return doctor_info_list
+		doctor_data = parseDoctorUrl(url)
+		if doctor_data is not None:
+			doctor_data_list.append(doctor_data)
+	return doctor_data_list
 
 def parseDoctorUrl(url):
 	"""
@@ -68,14 +70,14 @@ def parseDoctorUrl(url):
 	if raw_html is not None:
 		html = BeautifulSoup(raw_html, features="html.parser")
 		main_table = html.find('table', attrs={'id':'tableMain'})
-		doctor_info = {}
+		doctor_data = {}
 		personal_data = parsePersonalData(main_table)
-		doctor_info.update(personal_data)
+		doctor_data.update(personal_data)
 		clinical_practise = parseClinicalPractise(main_table)
-		doctor_info.update(clinical_practise)
+		doctor_data.update(clinical_practise)
 		qualifications = parseQualifications(main_table)
-		doctor_info.update(qualifications)
-		return doctor_info
+		doctor_data.update(qualifications)
+		return doctor_data
 	else:
 		return None
 
@@ -125,18 +127,18 @@ def parseQualifications(main_table):
 
 	# check lengths of the important rows
 	if len(qualifications_list[QUAL_ROW_HEADING]) != 3 or \
-		len(qualifications_list[QUAL_ROW_BASIC_INFO]) !=3 or \
-		len(qualifications_list[QUAL_ROW_SPECIALIST_INFO]) != 3:
+		len(qualifications_list[QUAL_ROW_BASIC_DATA]) !=3 or \
+		len(qualifications_list[QUAL_ROW_SPECIALIST_DATA]) != 3:
 		return {}
 
 	qualifications = {}
 	# get info for both the degrees
 	for column in range(QUAL_COLUMNS):
 		basic_key = ' '.join([qualifications_list[QUAL_ROW_HEADING][column].text, qualifications_list[QUAL_ROW_BASIC_HEADING][0].text])
-		basic_value = qualifications_list[QUAL_ROW_BASIC_INFO][column].text
+		basic_value = qualifications_list[QUAL_ROW_BASIC_DATA][column].text
 		qualifications[cleanUp(basic_key)] = cleanUp(basic_value)
 		specialist_key = ' '.join([qualifications_list[QUAL_ROW_HEADING][column].text, qualifications_list[QUAL_ROW_SPECIALIST_HEADING][0].text])
-		specialist_value = qualifications_list[QUAL_ROW_SPECIALIST_INFO][column].text
+		specialist_value = qualifications_list[QUAL_ROW_SPECIALIST_DATA][column].text
 		qualifications[cleanUp(specialist_key)] = cleanUp(specialist_value)
 	return qualifications
 
@@ -219,5 +221,5 @@ if __name__ == "__main__":
 	arguments = parser.parse_args()
 
 	urls = loadUrlFile(arguments.input)
-	doctors_info = getDoctorInfo(urls)
-	saveDictListToCsv(doctors_info, arguments.output)
+	doctor_data = getDoctorData(urls)
+	saveDictListToCsv(doctor_data, arguments.output)
