@@ -5,8 +5,9 @@ from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
 import string
+from unicodedata import normalize
 
-URL_FILE_NAME = 'urls.csv'
+URL_FILE_NAME = 'test.csv'
 
 def loadUrlFile(url_file_name):
 	"""
@@ -59,26 +60,33 @@ def parsePersonalData(main_table):
 	return personal_data
 
 def parseClinicalPractise(main_table):
-	clinical_practise_table = main_table.find('td', text='Clinical Practice(s)').parent
+	clinical_practise_tables = []
+	for table in main_table.find_all('td', text='Clinical Practice(s)'):
+		clinical_practise_tables.append(table.parent)
 	clinical_practise = {}
 	clinical_practise_no = 1
-	for table_row in clinical_practise_table.find_next_siblings():
-		data_list = table_row.find_all('td')
-		if len(data_list) == 3:
-			key = '(Clinic '+str(clinical_practise_no)+') '+cleanUp(data_list[1].text)
-			if key in clinical_practise:
-				clinical_practise_no += 1
+	for table in clinical_practise_tables:
+		for table_row in table.find_next_siblings():
+			data_list = table_row.find_all('td')
+			if len(data_list) == 3:
 				key = '(Clinic '+str(clinical_practise_no)+') '+cleanUp(data_list[1].text)
-			clinical_practise[key] = cleanUp(data_list[2].text)
+				clinical_practise[key] = cleanUp(data_list[2].text)
+		clinical_practise_no += 1
 	return clinical_practise
 
 def parseQualifications(main_table):
 	qualifications_table = main_table.find('td', text='Qualifications').parent
 	qualifications = {}
+	sibling_list = qualifications_table.find_next_siblings()
+	# sibling has just one table, so get inside and find the rows
+	for table_row in sibling_list[0].find_all('tr'):
+		data_list = table_row.find_all('td')
+
 	return qualifications
 
 def cleanUp(text):
-	words = text.split(' ')
+	# normalise unicode to get rid of weird characters like \xa0
+	words = normalize("NFKD", text).split(' ')
 	clean_words = []
 	for word in words:
 		clean_word = ''.join(char for char in word.strip() if (char in string.printable and char not in ['\r', '\n']))
