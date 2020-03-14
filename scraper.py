@@ -6,8 +6,10 @@ from contextlib import closing
 from bs4 import BeautifulSoup
 import string
 from unicodedata import normalize
+from csv import DictWriter
 
 URL_FILE_NAME = 'test.csv'
+OUTPUT_FILE_NAME = 'doctors.csv'
 
 # QUAL_ROWS = 5
 QUAL_COLUMNS = 3
@@ -175,9 +177,18 @@ def log_error(e):
 	"""
 	print(e)
 
+def saveDictListToCsv(list_of_dicts, output_filename):
+	fieldnames = set()
+	for d in list_of_dicts:
+		fieldnames.update(d.keys())
+
+	with open(OUTPUT_FILE_NAME, 'w') as output_file:
+		writer = DictWriter(output_file, fieldnames=sorted(fieldnames))
+		writer.writeheader()
+		writer.writerows(list_of_dicts)
 
 if __name__ == "__main__":
-	print("hello fuckers!!")
+	print("Welcome to this NSR scraper!!")
 	urls = loadUrlFile(URL_FILE_NAME)
 	doctors_info = getDoctorInfo(urls)
-	print(doctors_info)
+	saveDictListToCsv(doctors_info, OUTPUT_FILE_NAME)
