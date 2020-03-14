@@ -9,9 +9,9 @@ from unicodedata import normalize
 from csv import DictWriter
 from time import sleep
 import progressbar
+import argparse
+import sys
 
-URL_FILE_NAME = 'test.csv'
-OUTPUT_FILE_NAME = 'doctors.csv'
 HTTP_REQUEST_WAIT = 0.1
 
 # QUAL_ROWS = 5
@@ -37,9 +37,13 @@ def loadUrlFile(url_file_name):
 	"""
 	print("\nLoading URLs from " + url_file_name + "...", end = ' ')
 	urls = []
-	with open(url_file_name) as url_file:
-		for url in url_file:
-			urls.append(url.strip())
+	try:
+		with open(url_file_name) as url_file:
+			for url in url_file:
+				urls.append(url.strip())
+	except FileNotFoundError:
+		print("The file " + url_file_name + " does not exist!")
+		sys.exit(-1)
 	print("done")
 	return urls
 
@@ -200,7 +204,7 @@ def saveDictListToCsv(list_of_dicts, output_filename):
 	for d in list_of_dicts:
 		fieldnames.update(d.keys())
 
-	with open(OUTPUT_FILE_NAME, 'w') as output_file:
+	with open(output_filename, 'w') as output_file:
 		writer = DictWriter(output_file, fieldnames=sorted(fieldnames))
 		writer.writeheader()
 		writer.writerows(list_of_dicts)
@@ -209,6 +213,11 @@ def saveDictListToCsv(list_of_dicts, output_filename):
 
 if __name__ == "__main__":
 	print("Welcome to this NSR scraper!!")
-	urls = loadUrlFile(URL_FILE_NAME)
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-i", "--input", help="Input URL file", type=str, default="urls.csv")
+	parser.add_argument("-o", "--output", help="Outut CSV file", type=str, default="doctors.csv")
+	arguments = parser.parse_args()
+
+	urls = loadUrlFile(arguments.input)
 	doctors_info = getDoctorInfo(urls)
-	saveDictListToCsv(doctors_info, OUTPUT_FILE_NAME)
+	saveDictListToCsv(doctors_info, arguments.output)
