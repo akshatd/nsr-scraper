@@ -7,9 +7,12 @@ from bs4 import BeautifulSoup
 import string
 from unicodedata import normalize
 from csv import DictWriter
+from time import sleep
+import progressbar
 
 URL_FILE_NAME = 'test.csv'
 OUTPUT_FILE_NAME = 'doctors.csv'
+HTTP_REQUEST_WAIT = 0.1
 
 # QUAL_ROWS = 5
 QUAL_COLUMNS = 3
@@ -21,22 +24,33 @@ QUAL_ROW_BASIC_INFO = 2
 QUAL_ROW_SPECIALIST_HEADING = 3
 QUAL_ROW_SPECIALIST_INFO = 4
 
+progressbar_widgets=[
+	' [', progressbar.Timer(), '] ',
+	progressbar.Percentage(),
+	progressbar.Bar(),
+	' (', progressbar.ETA(), ') ',
+]
+
 def loadUrlFile(url_file_name):
 	"""
 	Loads URLs from a file into a list
 	"""
+	print("\nLoading URLs from " + url_file_name + "...", end = ' ')
 	urls = []
 	with open(url_file_name) as url_file:
 		for url in url_file:
 			urls.append(url.strip())
+	print("done")
 	return urls
 
 def getDoctorInfo(urls):
 	"""
 	Gets the doctor information from a list of URLs
 	"""
+	print("\nParsing doctor information from the URLs")
 	doctor_info_list = []
-	for url in urls:
+	for url in progressbar.progressbar(urls, widgets=progressbar_widgets):
+		sleep(HTTP_REQUEST_WAIT)
 		doctor_info = parseDoctorUrl(url)
 		if doctor_info is not None:
 			doctor_info_list.append(doctor_info)
@@ -178,6 +192,10 @@ def log_error(e):
 	print(e)
 
 def saveDictListToCsv(list_of_dicts, output_filename):
+	"""
+	Save a list of dictionaries to a file
+	"""
+	print("\nSaving to " + output_filename + "...", end = ' ')
 	fieldnames = set()
 	for d in list_of_dicts:
 		fieldnames.update(d.keys())
@@ -186,6 +204,8 @@ def saveDictListToCsv(list_of_dicts, output_filename):
 		writer = DictWriter(output_file, fieldnames=sorted(fieldnames))
 		writer.writeheader()
 		writer.writerows(list_of_dicts)
+	
+	print("done")
 
 if __name__ == "__main__":
 	print("Welcome to this NSR scraper!!")
